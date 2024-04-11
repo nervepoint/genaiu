@@ -111,8 +111,8 @@ public class GenAIU implements Callable<Integer> {
 		}
 		
 		output.ifPresentOrElse(p -> {
-			try(var out = Files.newOutputStream(p)) {
-				new INIWriter.Builder().build().write(ini);
+			try(var out = Files.newBufferedWriter(p)) {
+				new INIWriter.Builder().build().write(ini, out);
 			}
 			catch(IOException ioe) {
 				throw new UncheckedException(ioe);
