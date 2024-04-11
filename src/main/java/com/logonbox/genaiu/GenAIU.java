@@ -23,8 +23,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-@Command(name = "genaiu", mixinStandardHelpOptions = true, 
-	description = "Generate Advanced Installer Updates.", versionProvider = GenAIU.Version.class)
+@Command(name = "genaiu", /* mixinStandardHelpOptions = true, */
+		description = "Generate Advanced Installer Updates."/* , versionProvider = GenAIU.Version.class */)
 public class GenAIU implements Callable<Integer> {
 
 	
@@ -80,8 +80,8 @@ public class GenAIU implements Callable<Integer> {
 			String secName;
 			String updPath;
 			if(sep == -1) {
-				secName = calcSecNameFromPath(input);
 				updPath = input;
+				secName = calcSecNameFromPath(FilenameUtils.getName(updPath));
 			}
 			else {
 				secName = input.substring(0, sep);
@@ -118,15 +118,15 @@ public class GenAIU implements Callable<Integer> {
 				throw new UncheckedException(ioe);
 			}
 		}, () -> {
-			System.out.println(ini.toString());
+			System.out.print(ini.toString());
 		});
 		
-		throw new IllegalStateException("You must supply a subcommand.");
+		return 0;
 	}
+	
 
 	private String calcSecNameFromPath(String input) {
-		var prc = String.join(" ", input.replaceAll("[^A-Za-z0-9\\s]*", " ").split("\\s+"));
-		return toId(prc);
+		return String.join(" ", input.replaceAll("[^A-Za-z0-9\\s]+", " ").split("\\s+")).toLowerCase().replace(' ', '-');
 	}
 
 	public static void main(String[] args) {
@@ -136,10 +136,6 @@ public class GenAIU implements Callable<Integer> {
 	protected void error(String message, Object... args) {
 		System.err.println(String.format("genaiu: " + message, args));
 	}
-
-    private static String toId(String object) {
-    	return object.toLowerCase().replace("\\s*", "-");
-    }
 
     private static String toEnglish(String object) {
         return toEnglish(object, true);
