@@ -61,7 +61,7 @@ public class GenAIU implements Callable<Integer> {
 	@Option(names = {"-r", "--registry-key"}, paramLabel = "KEY", description = "The registry key where version numbers are kept for this application.", required = true)
 	private String registryKey;
 	
-	@Option(names = {"-o", "--output"}, paramLabel = "KEY", description = "The path to store the generated output. If ommitted, printed to system output.")
+	@Option(names = {"-o", "--output"}, paramLabel = "PATH", description = "The path to store the generated output. If ommitted, printed to system output.")
 	private Optional<Path> output;
 	
 	@Parameters(arity = "1..", description = "The updated installer(s). Each one should be a path (relative or absolute) to an updateable installer for this project. You may prefix either one with '<SECTION>:', where SECTION is the name to use for the section in the output file for this PATH'")
