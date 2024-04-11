@@ -14,6 +14,7 @@ import org.apache.commons.lang3.exception.UncheckedException;
 
 import com.sshtools.jini.INI;
 import com.sshtools.jini.INIWriter;
+import com.sshtools.jini.INIWriter.EscapeMode;
 import com.sshtools.jini.INIWriter.StringQuoteMode;
 
 import picocli.CommandLine;
@@ -92,7 +93,7 @@ public class GenAIU implements Callable<Integer> {
 			var fullUrl = url.orElseGet(() -> baseUrl.map(bu -> bu + "/" + serverFilename).orElseThrow(() -> new IllegalStateException("Either a URL or URL_FOLDER must be supplied.")));
 			
 			var sec = ini.create(secName);
-			sec.put("Name", name.orElseGet(() -> toEnglish(FilenameUtils.getBaseName(updPath))));
+			sec.put("Name", name.orElseGet(() -> toEnglish(processName(FilenameUtils.getBaseName(updPath)))));
 			sec.put("ProductVersion", productVersion.orElse(version));
 			sec.put("URL", fullUrl);
 			var path = Paths.get(updPath);
@@ -113,6 +114,7 @@ public class GenAIU implements Callable<Integer> {
 
 		var wtr = new INIWriter.Builder().
 				withStringQuoteMode(StringQuoteMode.NEVER).
+				withEscapeMode(EscapeMode.NEVER).
 				build();
 		output.ifPresentOrElse(p -> {
 			try(var out = Files.newBufferedWriter(p)) {
@@ -130,7 +132,11 @@ public class GenAIU implements Callable<Integer> {
 	
 
 	private String calcSecNameFromPath(String input) {
-		return String.join(" ", input.replaceAll("[^A-Za-z0-9\\s]+", " ").split("\\s+")).toLowerCase().replace(' ', '-');
+		return processName(input).toLowerCase().replace(' ', '-');
+	}
+
+	private String processName(String input) {
+		return String.join(" ", input.replaceAll("[^A-Za-z0-9\\s]+", " ").split("\\s+"));
 	}
 
 	public static void main(String[] args) {
