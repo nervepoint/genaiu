@@ -14,7 +14,7 @@ Use a Graal VM, run ..
 mvn package -P native-image
 ```
 
-The result will be in `targe`, run with `--help` for options.
+The result will be `target/genaiu`, run with `--help` for options.
 
 ## Usage
 
