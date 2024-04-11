@@ -14,6 +14,7 @@ import org.apache.commons.lang3.exception.UncheckedException;
 
 import com.sshtools.jini.INI;
 import com.sshtools.jini.INIWriter;
+import com.sshtools.jini.INIWriter.StringQuoteMode;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -109,16 +110,19 @@ public class GenAIU implements Callable<Integer> {
 			sec.put("RegistryKey", registryKey);
 			sec.put("Version", version);
 		}
-		
+
+		var wtr = new INIWriter.Builder().
+				withStringQuoteMode(StringQuoteMode.NEVER).
+				build();
 		output.ifPresentOrElse(p -> {
 			try(var out = Files.newBufferedWriter(p)) {
-				new INIWriter.Builder().build().write(ini, out);
+				wtr.write(ini, out);
 			}
 			catch(IOException ioe) {
 				throw new UncheckedException(ioe);
 			}
 		}, () -> {
-			System.out.print(ini.toString());
+			System.out.print(wtr.write(ini));
 		});
 		
 		return 0;
