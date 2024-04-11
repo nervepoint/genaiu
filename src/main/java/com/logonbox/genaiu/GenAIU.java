@@ -18,6 +18,7 @@ import com.sshtools.jini.INIWriter.EscapeMode;
 import com.sshtools.jini.INIWriter.StringQuoteMode;
 
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Model.CommandSpec;
@@ -42,9 +43,6 @@ public class GenAIU implements Callable<Integer> {
 	@Spec
 	CommandSpec spec;
 	
-	@Option(names = {"-n", "--name"}, paramLabel = "NAME", description = "The name of the application. If not provided, attempts will be made to generate from the filename.")
-	private Optional<String> name;
-	
 	@Option(names = {"-pv", "--product-version"}, paramLabel = "VERSION", description = "The product version number. If not supplied, VERSION.")
 	private Optional<String> productVersion;
 	
@@ -57,17 +55,29 @@ public class GenAIU implements Callable<Integer> {
 	@Option(names = {"-v", "--version"}, paramLabel = "VERSION", description = "The specific version number. Required.", required = true)
 	private String version;
 	
-	@Option(names = {"-f", "--flags"}, paramLabel = "FLAGS", description = "Other flags.")
-	private Optional<String> flags;
-	
-	@Option(names = {"-r", "--registry-key"}, paramLabel = "KEY", description = "The registry key where version numbers are kept for this application.", required = true)
-	private String registryKey;
-	
 	@Option(names = {"-o", "--output"}, paramLabel = "PATH", description = "The path to store the generated output. If ommitted, printed to system output.")
 	private Optional<Path> output;
 	
-	@Parameters(arity = "1..", description = "The updated installer(s). Each one should be a path (relative or absolute) to an updateable installer for this project. You may prefix either one with '<SECTION>:', where SECTION is the name to use for the section in the output file for this PATH'")
-	private List<String> inputs;
+    @ArgGroup(exclusive = false, multiplicity = "1..*")
+    List<Updater> updaters;
+	
+	static class Updater {
+		
+		@Option(names = {"-n", "--name"}, paramLabel = "NAME", description = "The name of the application. If not provided, attempts will be made to generate from the filename.")
+		private Optional<String> name;
+		
+		@Option(names = {"-f", "--flags"}, paramLabel = "FLAGS", description = "Other flags.")
+		private Optional<String> flags;
+		
+		@Option(names = {"-i", "--id"}, paramLabel = "ID", description = "The ID (i.e. section name) of this updater. If not specified, generated from filename.")
+		private Optional<String> id;
+		
+		@Option(names = {"-r", "--registry-key"}, paramLabel = "KEY", description = "The registry key where version numbers are kept for this application.", required = true)
+		private String registryKey;
+		
+		@Parameters(arity = "1", description = "The updated installer(s). Each one should be a path (relative or absolute) to an updateable installer for this project. You may prefix either one with '<SECTION>:', where SECTION is the name to use for the section in the output file for this PATH'")
+		private Path input;
+	}
 
 	public String getVersion() {
 		return spec.version()[0];
@@ -77,23 +87,15 @@ public class GenAIU implements Callable<Integer> {
 	public Integer call() throws Exception {
 		
 		var ini = INI.create();
-		for(var input : inputs) {
-			var sep = input.indexOf(':');
-			String secName;
-			String updPath;
-			if(sep == -1) {
-				updPath = input;
-				secName = calcSecNameFromPath(FilenameUtils.getName(updPath));
-			}
-			else {
-				secName = input.substring(0, sep);
-				updPath = input.substring(sep + 1);
-			}
+		for(var updater : updaters) {
+			var input = updater.input;
+			var updPath = input.toString();
+			var secName = updater.name.orElseGet(() -> calcSecNameFromPath(FilenameUtils.getName(updPath)));
 			var serverFilename = FilenameUtils.getName(updPath);
 			var fullUrl = url.orElseGet(() -> baseUrl.map(bu -> bu + "/" + serverFilename).orElseThrow(() -> new IllegalStateException("Either a URL or URL_FOLDER must be supplied.")));
 			
 			var sec = ini.create(secName);
-			sec.put("Name", name.orElseGet(() -> toEnglish(processName(FilenameUtils.getBaseName(updPath)))));
+			sec.put("Name", updater.name.orElseGet(() -> toEnglish(processName(FilenameUtils.getBaseName(updPath)))));
 			sec.put("ProductVersion", productVersion.orElse(version));
 			sec.put("URL", fullUrl);
 			var path = Paths.get(updPath);
@@ -105,10 +107,10 @@ public class GenAIU implements Callable<Integer> {
 				sec.put("MD5", DigestUtils.md5Hex(in));
 			}
 			sec.put("ServerFileName", serverFilename);
-			flags.ifPresent(flgs ->
+			updater.flags.ifPresent(flgs ->
 				sec.put("Flags", flgs)
 			);
-			sec.put("RegistryKey", registryKey);
+			sec.put("RegistryKey", updater.registryKey);
 			sec.put("Version", version);
 		}
 
