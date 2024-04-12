@@ -44,9 +44,6 @@ public class GenAIU implements Callable<Integer> {
 	@Spec
 	CommandSpec spec;
 	
-	@Option(names = {"-pv", "--product-version"}, paramLabel = "VERSION", description = "The product version number. If not supplied, VERSION.")
-	private Optional<String> productVersion;
-	
 	@Option(names = {"-u", "--base-url"}, paramLabel = "URL_FOLDER", description = "The folder on update server where the updated installer is. The input filename will be appended to this. Either this or FULL_URL must be provided.")
 	private Optional<String> baseUrl;
 	
@@ -97,7 +94,6 @@ public class GenAIU implements Callable<Integer> {
 			
 			var sec = ini.create(secName);
 			sec.put("Name", updater.name.orElseGet(() -> toEnglish(processName(FilenameUtils.getBaseName(updPath)))));
-			sec.put("ProductVersion", productVersion.orElse(version));
 			sec.put("URL", fullUrl);
 			var path = Paths.get(updPath);
 			sec.put("Size", Files.size(path));
