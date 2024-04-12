@@ -1,6 +1,7 @@
 package com.logonbox.genaiu;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -120,12 +121,14 @@ public class GenAIU implements Callable<Integer> {
 				build();
 		output.ifPresentOrElse(p -> {
 			try(var out = Files.newBufferedWriter(p)) {
+				new PrintWriter(out).println(";aiu;");
 				wtr.write(ini, out);
 			}
 			catch(IOException ioe) {
 				throw new UncheckedException(ioe);
 			}
 		}, () -> {
+			System.out.println(";aiu;");
 			System.out.print(wtr.write(ini));
 		});
 		
